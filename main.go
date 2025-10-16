@@ -15,6 +15,7 @@ func main() {
 	}
 
 	database.ConnectDB()
+	database.ConnectMongoDB()
 	defer database.DB.Close()
 
 	app := fiber.New(fiber.Config{

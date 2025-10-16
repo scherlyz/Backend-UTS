@@ -12,11 +12,11 @@ import (
 func GetAllPekerjaan() ([]model.PekerjaanAlumni, error) {
 	rows, err := database.DB.Query(`
 		SELECT id, alumni_id, nama_perusahaan, posisi_jabatan, bidang_industri, lokasi_kerja, gaji_range,
-		       tanggal_mulai_kerja, tanggal_selesai_kerja, status_pekerjaan, deskripsi_pekerjaan, is_deleted, created_at, updated_at
-		FROM pekerjaan_alumni ORDER BY created_at DESC
-		WHERE is_deleted = FALSE
+			tanggal_mulai_kerja, tanggal_selesai_kerja, status_pekerjaan, deskripsi_pekerjaan, created_at, updated_at
+		FROM pekerjaan_alumni
 		ORDER BY created_at DESC
 	`)
+
 	if err != nil {
 		return nil, err
 	}
@@ -29,7 +29,7 @@ func GetAllPekerjaan() ([]model.PekerjaanAlumni, error) {
 		if err := rows.Scan(
 			&p.ID, &p.AlumniID, &p.NamaPerusahaan, &p.PosisiJabatan, &p.BidangIndustri,
 			&p.LokasiKerja, &p.GajiRange, &p.TanggalMulaiKerja, &ts,
-			&p.StatusPekerjaan, &p.DeskripsiPekerjaan, &p.IsDeleted, &p.CreatedAt, &p.UpdatedAt,
+			&p.StatusPekerjaan, &p.DeskripsiPekerjaan, &p.CreatedAt, &p.UpdatedAt,
 		); err != nil {
 			return nil, err
 		}
@@ -48,12 +48,12 @@ func GetPekerjaanByID(id int) (model.PekerjaanAlumni, error) {
 	var ts sql.NullTime
 	err := database.DB.QueryRow(`
 		SELECT id, alumni_id, nama_perusahaan, posisi_jabatan, bidang_industri, lokasi_kerja, gaji_range,
-		       tanggal_mulai_kerja, tanggal_selesai_kerja, status_pekerjaan, deskripsi_pekerjaan, is_deleted, created_at, updated_at
+		       tanggal_mulai_kerja, tanggal_selesai_kerja, status_pekerjaan, deskripsi_pekerjaan, created_at, updated_at
 		FROM pekerjaan_alumni WHERE id=$1
 	`, id).Scan(
 		&p.ID, &p.AlumniID, &p.NamaPerusahaan, &p.PosisiJabatan, &p.BidangIndustri,
 		&p.LokasiKerja, &p.GajiRange, &p.TanggalMulaiKerja, &ts,
-		&p.StatusPekerjaan, &p.DeskripsiPekerjaan, &p.IsDeleted, &p.CreatedAt, &p.UpdatedAt,
+		&p.StatusPekerjaan, &p.DeskripsiPekerjaan, &p.CreatedAt, &p.UpdatedAt,
 	)
 	if ts.Valid {
 		t := ts.Time
@@ -66,7 +66,7 @@ func GetPekerjaanByID(id int) (model.PekerjaanAlumni, error) {
 func GetPekerjaanByAlumniID(alumniID int) ([]model.PekerjaanAlumni, error) {
 	rows, err := database.DB.Query(`
 		SELECT id, alumni_id, nama_perusahaan, posisi_jabatan, bidang_industri, lokasi_kerja, gaji_range,
-		       tanggal_mulai_kerja, tanggal_selesai_kerja, status_pekerjaan, deskripsi_pekerjaan, is_deleted, created_at, updated_at
+		       tanggal_mulai_kerja, tanggal_selesai_kerja, status_pekerjaan, deskripsi_pekerjaan, created_at, updated_at
 		FROM pekerjaan_alumni WHERE alumni_id=$1 ORDER BY created_at DESC
 	`, alumniID)
 	if err != nil {
@@ -81,7 +81,7 @@ func GetPekerjaanByAlumniID(alumniID int) ([]model.PekerjaanAlumni, error) {
 		if err := rows.Scan(
 			&p.ID, &p.AlumniID, &p.NamaPerusahaan, &p.PosisiJabatan, &p.BidangIndustri,
 			&p.LokasiKerja, &p.GajiRange, &p.TanggalMulaiKerja, &ts,
-			&p.StatusPekerjaan, &p.DeskripsiPekerjaan, &p.IsDeleted, &p.CreatedAt, &p.UpdatedAt,
+			&p.StatusPekerjaan, &p.DeskripsiPekerjaan, &p.CreatedAt, &p.UpdatedAt,
 		); err != nil {
 			return nil, err
 		}
@@ -101,7 +101,7 @@ func CreatePekerjaan(p model.PekerjaanAlumni) (model.PekerjaanAlumni, error) {
 			alumni_id, nama_perusahaan, posisi_jabatan, bidang_industri, lokasi_kerja, gaji_range,
 			tanggal_mulai_kerja, tanggal_selesai_kerja, status_pekerjaan, deskripsi_pekerjaan,
 			created_at, updated_at
-		) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,&13)
+		) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
 		RETURNING id
 	`, p.AlumniID, p.NamaPerusahaan, p.PosisiJabatan, p.BidangIndustri, p.LokasiKerja,
 		p.GajiRange, p.TanggalMulaiKerja, p.TanggalSelesaiKerja, p.StatusPekerjaan,
@@ -111,6 +111,8 @@ func CreatePekerjaan(p model.PekerjaanAlumni) (model.PekerjaanAlumni, error) {
 	}
 	return p, err
 }
+
+
 
 // Update
 func UpdatePekerjaan(p model.PekerjaanAlumni) (model.PekerjaanAlumni, error) {
@@ -168,7 +170,6 @@ func GetAllPekerjaanWithPagination(search, sortBy, order string, limit, offset i
 	return list, nil
 }
 
-// Count
 func CountPekerjaan(search string) (int, error) {
 	var count int
 	err := database.DB.QueryRow(`
@@ -178,7 +179,7 @@ func CountPekerjaan(search string) (int, error) {
 	return count, err
 }
 
-func SoftDeletePekerjaan(id int) error {
+func SoftDeletePekerjaanAdmin(id int) error {
 	_, err := database.DB.Exec(`
 		UPDATE pekerjaan_alumni
 		SET is_deleted = TRUE, updated_at = NOW()
@@ -187,24 +188,85 @@ func SoftDeletePekerjaan(id int) error {
 	return err
 }
 
-func CheckPekerjaanOwnedByAlumni(pekerjaanID int, alumniID int) (bool, error) {
-	var count int
-	err := database.DB.QueryRow(`
-		SELECT COUNT(*) FROM pekerjaan_alumni
+func SoftDeletePekerjaanUser(id, alumniID int) error {
+	result, err := database.DB.Exec(`
+		UPDATE pekerjaan_alumni
+		SET is_deleted = TRUE, updated_at = NOW()
 		WHERE id = $1 AND alumni_id = $2
-	`, pekerjaanID, alumniID).Scan(&count)
-
+	`, id, alumniID)
 	if err != nil {
-		return false, err
+		return err
 	}
-	return count > 0, nil
+	rows, _ := result.RowsAffected()
+	if rows == 0 {
+		return fmt.Errorf("data tidak ditemukan atau bukan milik alumni ini")
+	}
+	return nil
 }
 
+// === Restore ===
+func RestorePekerjaanAdmin(id int) error {
+	_, err := database.DB.Exec(`
+		UPDATE pekerjaan_alumni
+		SET is_deleted = FALSE, updated_at = NOW()
+		WHERE id = $1
+	`, id)
+	return err
+}
 
-func GetTrashedPekerjaan() ([]model.PekerjaanAlumni, error) {
+func RestorePekerjaanUser(id, alumniID int) error {
+	result, err := database.DB.Exec(`
+		UPDATE pekerjaan_alumni
+		SET is_deleted = FALSE, updated_at = NOW()
+		WHERE id = $1 AND alumni_id = $2
+	`, id, alumniID)
+	if err != nil {
+		return err
+	}
+	rows, _ := result.RowsAffected()
+	if rows == 0 {
+		return fmt.Errorf("data tidak ditemukan atau bukan milik alumni ini")
+	}
+	return nil
+}
+
+// === Hard Delete ===
+func HardDeletePekerjaanAdmin(id int) error {
+	result, err := database.DB.Exec(`
+		DELETE FROM pekerjaan_alumni
+		WHERE id = $1 AND is_deleted = TRUE
+	`, id)
+	if err != nil {
+		return err
+	}
+	rows, _ := result.RowsAffected()
+	if rows == 0 {
+		return fmt.Errorf("data tidak ditemukan atau belum dihapus (soft delete)")
+	}
+	return nil
+}
+
+func HardDeletePekerjaanUser(id, alumniID int) error {
+	result, err := database.DB.Exec(`
+		DELETE FROM pekerjaan_alumni
+		WHERE id = $1 AND alumni_id = $2 AND is_deleted = TRUE
+	`, id, alumniID)
+	if err != nil {
+		return err
+	}
+	rows, _ := result.RowsAffected()
+	if rows == 0 {
+		return fmt.Errorf("data tidak ditemukan atau bukan milik alumni ini")
+	}
+	return nil
+}
+
+// === Get trashed ===
+func GetTrashedPekerjaanAdmin() ([]model.PekerjaanAlumniTrashed, error) {
 	rows, err := database.DB.Query(`
 		SELECT id, alumni_id, nama_perusahaan, posisi_jabatan, bidang_industri, lokasi_kerja, gaji_range,
-		       tanggal_mulai_kerja, tanggal_selesai_kerja, status_pekerjaan, deskripsi_pekerjaan, is_deleted, created_at, updated_at
+		       tanggal_mulai_kerja, tanggal_selesai_kerja, status_pekerjaan, deskripsi_pekerjaan,
+			   is_deleted, created_at, updated_at
 		FROM pekerjaan_alumni
 		WHERE is_deleted = TRUE
 		ORDER BY updated_at DESC
@@ -214,9 +276,9 @@ func GetTrashedPekerjaan() ([]model.PekerjaanAlumni, error) {
 	}
 	defer rows.Close()
 
-	var list []model.PekerjaanAlumni
+	var list []model.PekerjaanAlumniTrashed
 	for rows.Next() {
-		var p model.PekerjaanAlumni
+		var p model.PekerjaanAlumniTrashed
 		var ts sql.NullTime
 		if err := rows.Scan(
 			&p.ID, &p.AlumniID, &p.NamaPerusahaan, &p.PosisiJabatan, &p.BidangIndustri,
@@ -234,31 +296,36 @@ func GetTrashedPekerjaan() ([]model.PekerjaanAlumni, error) {
 	return list, nil
 }
 
-func RestorePekerjaan(id int) error {
-	_, err := database.DB.Exec(`
-		UPDATE pekerjaan_alumni
-		SET is_deleted = FALSE, updated_at = NOW()
-		WHERE id = $1
-	`, id)
-
-	return err
-}
-
-func HardDeletePekerjaan(id int) error {
-	result, err := database.DB.Exec(`
-		DELETE FROM pekerjaan_alumni
-		WHERE id = $1 AND is_deleted = TRUE
-	`, id)
-
+func GetTrashedPekerjaanUser(alumniID int) ([]model.PekerjaanAlumniTrashed, error) {
+	rows, err := database.DB.Query(`
+		SELECT id, alumni_id, nama_perusahaan, posisi_jabatan, bidang_industri, lokasi_kerja, gaji_range,
+		       tanggal_mulai_kerja, tanggal_selesai_kerja, status_pekerjaan, deskripsi_pekerjaan,
+			   is_deleted, created_at, updated_at
+		FROM pekerjaan_alumni
+		WHERE is_deleted = TRUE AND alumni_id = $1
+		ORDER BY updated_at DESC
+	`, alumniID)
 	if err != nil {
-		return err
+		return nil, err
 	}
+	defer rows.Close()
 
-	rowsAffected, _ := result.RowsAffected()
-	if rowsAffected == 0 {
-		return fmt.Errorf("data tidak ditemukan atau belum dihapus (soft delete)")
+	var list []model.PekerjaanAlumniTrashed
+	for rows.Next() {
+		var p model.PekerjaanAlumniTrashed
+		var ts sql.NullTime
+		if err := rows.Scan(
+			&p.ID, &p.AlumniID, &p.NamaPerusahaan, &p.PosisiJabatan, &p.BidangIndustri,
+			&p.LokasiKerja, &p.GajiRange, &p.TanggalMulaiKerja, &ts,
+			&p.StatusPekerjaan, &p.DeskripsiPekerjaan, &p.IsDeleted, &p.CreatedAt, &p.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		if ts.Valid {
+			t := ts.Time
+			p.TanggalSelesaiKerja = &t
+		}
+		list = append(list, p)
 	}
-
-	return nil
+	return list, nil
 }
-

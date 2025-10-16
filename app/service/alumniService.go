@@ -23,28 +23,39 @@ func GetAlumniByIDService(c *fiber.Ctx) error {
 	if err != nil {
 		return c.Status(400).JSON(fiber.Map{"error": "ID tidak valid"})
 	}
+
 	data, err := repository.GetAlumniByID(id)
 	if err != nil {
 		return c.Status(404).JSON(fiber.Map{"error": "Alumni tidak ditemukan"})
 	}
+
 	return c.JSON(fiber.Map{"success": true, "data": data})
 }
 
+// CREATE alumni baru
 // CREATE alumni baru
 func CreateAlumniService(c *fiber.Ctx) error {
 	var input model.Alumni
 	if err := c.BodyParser(&input); err != nil {
 		return c.Status(400).JSON(fiber.Map{"error": err.Error()})
 	}
+
 	input.CreatedAt = time.Now()
 	input.UpdatedAt = time.Now()
 
+	// panggil repository.CreateAlumni langsung
 	data, err := repository.CreateAlumni(input)
 	if err != nil {
 		return c.Status(500).JSON(fiber.Map{"error": err.Error()})
 	}
-	return c.Status(201).JSON(fiber.Map{"success": true, "data": data})
+
+	return c.Status(201).JSON(fiber.Map{
+		"success": true,
+		"message": "Alumni berhasil dibuat",
+		"data":    data,
+	})
 }
+
 
 // UPDATE alumni
 func UpdateAlumniService(c *fiber.Ctx) error {
@@ -52,6 +63,7 @@ func UpdateAlumniService(c *fiber.Ctx) error {
 	if err != nil {
 		return c.Status(400).JSON(fiber.Map{"error": "ID tidak valid"})
 	}
+
 	var input model.Alumni
 	if err := c.BodyParser(&input); err != nil {
 		return c.Status(400).JSON(fiber.Map{"error": err.Error()})
@@ -59,11 +71,12 @@ func UpdateAlumniService(c *fiber.Ctx) error {
 	input.ID = id
 	input.UpdatedAt = time.Now()
 
-	data, err := repository.UpdateAlumni(input)
+	updated, err := repository.UpdateAlumni(input)
 	if err != nil {
 		return c.Status(500).JSON(fiber.Map{"error": err.Error()})
 	}
-	return c.JSON(fiber.Map{"success": true, "data": data})
+
+	return c.JSON(fiber.Map{"success": true, "message": "Data alumni diperbarui", "data": updated})
 }
 
 // DELETE alumni
@@ -72,9 +85,11 @@ func DeleteAlumniService(c *fiber.Ctx) error {
 	if err != nil {
 		return c.Status(400).JSON(fiber.Map{"error": "ID tidak valid"})
 	}
+
 	if err := repository.DeleteAlumni(id); err != nil {
 		return c.Status(500).JSON(fiber.Map{"error": err.Error()})
 	}
+
 	return c.JSON(fiber.Map{"success": true, "message": "Alumni berhasil dihapus"})
 }
 
@@ -95,6 +110,7 @@ func UpdateStatusKematianService(c *fiber.Ctx) error {
 	if err := repository.UpdateStatusKematian(id, req.StatusKematian); err != nil {
 		return c.Status(500).JSON(fiber.Map{"error": "Gagal update status kematian"})
 	}
+
 	return c.JSON(fiber.Map{"success": true, "message": "Status kematian diperbarui"})
 }
 
@@ -112,6 +128,7 @@ func GetAlumniWithPaginationService(c *fiber.Ctx) error {
 	if err != nil {
 		return c.Status(500).JSON(fiber.Map{"error": err.Error()})
 	}
+
 	total, _ := repository.CountAlumniRepo(search)
 
 	response := model.AlumniResponse{

@@ -181,26 +181,22 @@ func GetAllPekerjaanPaginationService(c *fiber.Ctx) error {
 	})
 }
 
+// === SOFT DELETE ===
 func SoftDeletePekerjaanService(c *fiber.Ctx) error {
 	id, err := strconv.Atoi(c.Params("id"))
 	if err != nil {
-		return c.Status(400).JSON(fiber.Map{"error": "Invalid id"})
+		return c.Status(400).JSON(fiber.Map{"error": "ID tidak valid"})
 	}
 
 	role := c.Locals("role").(string)
 	userID := c.Locals("user_id").(int)
 
-	if role == "alumni" {
-		allowed, err := repository.CheckPekerjaanOwnedByAlumni(id, userID)
-		if err != nil {
-			return c.Status(500).JSON(fiber.Map{"error": err.Error()})
-		}
-		if !allowed {
-			return c.Status(403).JSON(fiber.Map{"error": "Tidak boleh hapus pekerjaan milik alumni lain"})
-		}
+	if role == "admin" {
+		err = repository.SoftDeletePekerjaanAdmin(id)
+	} else {
+		err = repository.SoftDeletePekerjaanUser(id, userID)
 	}
 
-	err = repository.SoftDeletePekerjaan(id)
 	if err != nil {
 		return c.Status(500).JSON(fiber.Map{"error": err.Error()})
 	}
@@ -211,62 +207,75 @@ func SoftDeletePekerjaanService(c *fiber.Ctx) error {
 	})
 }
 
-func GetTrashedPekerjaanService(c *fiber.Ctx) error {
-	data, err := repository.GetTrashedPekerjaan()
-	if err != nil {
-		return c.Status(500).JSON(fiber.Map{
-			"success": false,
-			"error":   err.Error(),
-		})
-	}
-	return c.JSON(fiber.Map{
-		"success": true,
-		"data":    data,
-	})
-}
-
+// === RESTORE ===
 func RestorePekerjaanService(c *fiber.Ctx) error {
 	id, err := strconv.Atoi(c.Params("id"))
 	if err != nil {
-		return c.Status(400).JSON(fiber.Map{
-			"success": false,
-			"error":   "ID tidak valid",
-		})
+		return c.Status(400).JSON(fiber.Map{"error": "ID tidak valid"})
 	}
 
-	err = repository.RestorePekerjaan(id)
+	role := c.Locals("role").(string)
+	userID := c.Locals("user_id").(int)
+
+	if role == "admin" {
+		err = repository.RestorePekerjaanAdmin(id)
+	} else {
+		err = repository.RestorePekerjaanUser(id, userID)
+	}
+
 	if err != nil {
-		return c.Status(500).JSON(fiber.Map{
-			"success": false,
-			"error":   err.Error(),
-		})
+		return c.Status(500).JSON(fiber.Map{"error": err.Error()})
 	}
 
 	return c.JSON(fiber.Map{
 		"success": true,
-		"message": "Data pekerjaan berhasil direstore",
+		"message": fmt.Sprintf("Restore pekerjaan id %d sukses", id),
 	})
 }
 
+// === HARD DELETE ===
 func HardDeletePekerjaanService(c *fiber.Ctx) error {
-	id, err := c.ParamsInt("id")
+	id, err := strconv.Atoi(c.Params("id"))
 	if err != nil {
-		return c.Status(400).JSON(fiber.Map{
-			"success": false,
-			"error":   "ID tidak valid",
-		})
+		return c.Status(400).JSON(fiber.Map{"error": "ID tidak valid"})
 	}
 
-	err = repository.HardDeletePekerjaan(id)
+	role := c.Locals("role").(string)
+	userID := c.Locals("user_id").(int)
+
+	if role == "admin" {
+		err = repository.HardDeletePekerjaanAdmin(id)
+	} else {
+		err = repository.HardDeletePekerjaanUser(id, userID)
+	}
+
 	if err != nil {
-		return c.Status(500).JSON(fiber.Map{
-			"success": false,
-			"error":   err.Error(),
-		})
+		return c.Status(500).JSON(fiber.Map{"error": err.Error()})
 	}
 
 	return c.JSON(fiber.Map{
 		"success": true,
-		"message": "Data berhasil dihapus permanen",
+		"message": fmt.Sprintf("Hard delete pekerjaan id %d sukses", id),
 	})
+}
+
+// === TRASHED ===
+func GetTrashedPekerjaanService(c *fiber.Ctx) error {
+	role := c.Locals("role").(string)
+	userID := c.Locals("user_id").(int)
+
+	var data []model.PekerjaanAlumniTrashed
+	var err error
+
+	if role == "admin" {
+		data, err = repository.GetTrashedPekerjaanAdmin()
+	} else {
+		data, err = repository.GetTrashedPekerjaanUser(userID)
+	}
+
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"success": false, "error": err.Error()})
+	}
+
+	return c.JSON(fiber.Map{"success": true, "data": data})
 }
